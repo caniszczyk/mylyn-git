@@ -9,15 +9,27 @@
  *******************************************************************************/
 package org.eclipse.mylyn.internal.team.git.tasks;
 
+import java.io.IOException;
+import java.util.Map.Entry;
+
+import org.eclipse.egit.core.RepositoryUtil;
 import org.eclipse.egit.ui.Activator;
-import org.eclipse.egit.ui.RepositoryUtil;
+import org.eclipse.egit.ui.UIIcons;
 import org.eclipse.egit.ui.internal.repository.RepositoriesViewContentProvider;
 import org.eclipse.egit.ui.internal.repository.RepositoriesViewLabelProvider;
+import org.eclipse.egit.ui.internal.repository.tree.RepositoryTreeNode;
 import org.eclipse.jface.dialogs.TitleAreaDialog;
 import org.eclipse.jface.layout.GridDataFactory;
-import org.eclipse.jface.layout.GridLayoutFactory;
+import org.eclipse.jface.viewers.ISelectionChangedListener;
+import org.eclipse.jface.viewers.IStructuredSelection;
+import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.jface.viewers.TableViewer;
+import org.eclipse.jgit.lib.Constants;
+import org.eclipse.jgit.lib.Ref;
+import org.eclipse.jgit.lib.Repository;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.SelectionAdapter;
+import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
@@ -30,44 +42,92 @@ public class RepositoryAndBranchSelectionDialog extends TitleAreaDialog {
 	private TableViewer repositoryTableViewer;
 	private Combo branchCombo;
 	private RepositoryUtil util = Activator.getDefault().getRepositoryUtil();
+	private String initialBranch;
+	private String branch;
+	private Repository repo;
 
-	public RepositoryAndBranchSelectionDialog(Shell parentShell) {
+	public RepositoryAndBranchSelectionDialog(Shell parentShell, String initialBranch) {
 		super(parentShell);
+		this.initialBranch = initialBranch;
 	}
 
 	@Override
 	protected Control createDialogArea(Composite parent) {
 		Composite composite = (Composite) super.createDialogArea(parent);
-		Composite main = new Composite(composite, SWT.NONE);
+		composite.setLayout(new GridLayout(3, false));
 
-		GridLayoutFactory.fillDefaults().numColumns(3).applyTo(main);
-		GridDataFactory.fillDefaults().grab(true, true).applyTo(main);
-		
-		Label repositoryLabel = new Label(main, SWT.NONE);
+		Label repositoryLabel = new Label(composite, SWT.NONE);
 		repositoryLabel.setText("Select a repository:");
 		GridDataFactory.fillDefaults().span(3, 1).grab(true, false).applyTo(
 				repositoryLabel);
 
-		repositoryTableViewer = new TableViewer(main, SWT.SINGLE | SWT.H_SCROLL | SWT.V_SCROLL
+		repositoryTableViewer = new TableViewer(composite, SWT.SINGLE | SWT.H_SCROLL | SWT.V_SCROLL
 				| SWT.BORDER);
 		repositoryTableViewer.setContentProvider(new RepositoriesViewContentProvider());
 		GridDataFactory.fillDefaults().span(3, 1).grab(true, true).applyTo(repositoryTableViewer.getTable());
 		repositoryTableViewer.setLabelProvider(new RepositoriesViewLabelProvider());
 		repositoryTableViewer.setInput(util.getConfiguredRepositories());
 
-		// TODO set the initial repository
+		// TODO use a ComboViewer
+		branchCombo = new Combo(composite, SWT.DROP_DOWN);
+		branchCombo.setLayoutData(GridDataFactory.fillDefaults().span(3,1).grab(true, false).create());
+		branchCombo.setEnabled(false);
+		
+		repositoryTableViewer.addSelectionChangedListener(new ISelectionChangedListener() {
 
-		Label branchLabel = new Label(main, SWT.NONE);
-		branchLabel.setText("Branch: ");
+			public void selectionChanged(SelectionChangedEvent event) {
+				try {
+					branchCombo.setEnabled(true);
+					branchCombo.removeAll();
+					branchCombo.setText(initialBranch);
+					repo = getRepository();
+					if (repo != null) {
+						for (Entry<String, Ref> refEntry : repo.getRefDatabase()
+								.getRefs(Constants.R_HEADS).entrySet()) {
+							if (!refEntry.getValue().isSymbolic())
+								branchCombo.add(refEntry.getValue().getName());
 
-		branchCombo = new Combo(main, SWT.READ_ONLY | SWT.DROP_DOWN);
+						}
+					}
+				} catch (IOException e) {
+					// do nothing atm
+				}
+			}
 
-		// TODO fill branch based on repo selection
+		});
+		
+		// TODO how do we handle multiple repos?
+		// need to figure out things..
+		branchCombo.setText(initialBranch);
+		
+		branchCombo.addSelectionListener(new SelectionAdapter() {
 
-		GridDataFactory.fillDefaults().span(2, 1).grab(true, false).applyTo(
-				branchCombo);
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				branch = branchCombo.getText();
+			}
+		});
+		
+		setTitle("Select Branch");
+		setMessage("Select a repository and corresponding branch to checkout.");
+		setTitleImage(UIIcons.WIZBAN_CONNECT_REPO.createImage());
+		applyDialogFont(composite);
+		return composite;
+	}
+	
+	public String getBranch() {
+		return branch;
+	}
 
-		return main;
+	/**
+	 * @return the repository
+	 */
+	public Repository getRepository() {
+		Object obj = ((IStructuredSelection) repositoryTableViewer.getSelection())
+		.getFirstElement();
+		if (obj == null)
+			return null;
+		return ((RepositoryTreeNode) obj).getRepository();
 	}
 
 }
