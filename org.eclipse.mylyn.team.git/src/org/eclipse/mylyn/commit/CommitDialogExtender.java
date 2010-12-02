@@ -7,7 +7,7 @@ import org.eclipse.mylyn.tasks.core.ITaskActivityManager;
 import org.eclipse.mylyn.tasks.ui.TasksUi;
 
 @SuppressWarnings("restriction")
-public class CommitMessageProvider implements ICommitDialogExtender {
+public class CommitDialogExtender implements ICommitDialogExtender {
 
 	/**
 	 * @author Markus Alexander Kuppe
