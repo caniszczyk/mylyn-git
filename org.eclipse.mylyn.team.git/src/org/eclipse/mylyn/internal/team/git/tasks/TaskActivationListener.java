@@ -29,7 +29,7 @@ public class TaskActivationListener implements ITaskActivationListener {
 
 	public void preTaskActivated(ITask task) {
 		// TODO if there's a context, should we browse it to deduce which repo to choose?
-		String branch = task.getTaskKey();
+		String branch = task.getTaskKey() != null ? task.getTaskKey() : task.getTaskId();
 		String branchFullName = Constants.R_HEADS + branch;
 		RepositoryAndBranchSelectionDialog dialog = new RepositoryAndBranchSelectionDialog(PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell(), branchFullName);
 		if (dialog.open() == Window.OK) {
