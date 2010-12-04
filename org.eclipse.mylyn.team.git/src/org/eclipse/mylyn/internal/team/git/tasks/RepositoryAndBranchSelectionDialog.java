@@ -28,6 +28,10 @@ import org.eclipse.jgit.lib.Constants;
 import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.FocusEvent;
+import org.eclipse.swt.events.FocusListener;
+import org.eclipse.swt.events.ModifyEvent;
+import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.GridLayout;
@@ -99,12 +103,16 @@ public class RepositoryAndBranchSelectionDialog extends TitleAreaDialog {
 		// TODO how do we handle multiple repos?
 		// need to figure out things..
 		branchCombo.setText(initialBranch);
+		branch = initialBranch;
 		
-		branchCombo.addSelectionListener(new SelectionAdapter() {
+		branchCombo.addFocusListener(new FocusListener() {
+			
+			public void focusLost(FocusEvent e) {
+				branch = branchCombo.getText();					
+			}
 
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				branch = branchCombo.getText();
+			public void focusGained(FocusEvent e) {
+				// Nothing to do				
 			}
 		});
 		
@@ -122,12 +130,18 @@ public class RepositoryAndBranchSelectionDialog extends TitleAreaDialog {
 	/**
 	 * @return the repository
 	 */
-	public Repository getRepository() {
+	private Repository getRepository() {
 		Object obj = ((IStructuredSelection) repositoryTableViewer.getSelection())
 		.getFirstElement();
 		if (obj == null)
 			return null;
 		return ((RepositoryTreeNode) obj).getRepository();
+	}
+	
+	public Repository getSelectedRepository() {
+		if (repo == null)
+			return null;
+		return repo;
 	}
 
 }

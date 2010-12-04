@@ -9,9 +9,13 @@
  *******************************************************************************/
 package org.eclipse.mylyn.internal.team.git.tasks;
 
+import java.io.IOException;
+
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.egit.core.Activator;
 import org.eclipse.egit.core.op.BranchOperation;
+import org.eclipse.egit.core.op.CreateLocalBranchOperation;
+import org.eclipse.egit.core.op.IEGitOperation;
 import org.eclipse.jface.window.Window;
 import org.eclipse.jgit.lib.Constants;
 import org.eclipse.jgit.lib.Repository;
@@ -20,16 +24,30 @@ import org.eclipse.mylyn.tasks.core.ITaskActivationListener;
 import org.eclipse.ui.PlatformUI;
 
 public class TaskActivationListener implements ITaskActivationListener {
+	
+	private boolean branchExists;
 
 	public void preTaskActivated(ITask task) {
 		// TODO if there's a context, should we browse it to deduce which repo to choose?
-		String branch = Constants.R_HEADS + task.getTaskId();
-		RepositoryAndBranchSelectionDialog dialog = new RepositoryAndBranchSelectionDialog(PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell(), branch);
+		String branch = task.getTaskKey();
+		String branchFullName = Constants.R_HEADS + branch;
+		RepositoryAndBranchSelectionDialog dialog = new RepositoryAndBranchSelectionDialog(PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell(), branchFullName);
 		if (dialog.open() == Window.OK) {
 			try {
-				BranchOperation operation = new BranchOperation(dialog.getRepository(), dialog.getBranch());
+				Repository repo = dialog.getSelectedRepository();
+								
+				// Create new branch, if branch with proposed name doesn't exist, otherwise checkout
+				if (repo.getRefDatabase().getRef(branch) == null) {		
+					CreateLocalBranchOperation createOperation = new CreateLocalBranchOperation(repo, branch, repo.getRef(Constants.R_HEADS + Constants.MASTER));
+					createOperation.execute(null);
+				}
+				
+				BranchOperation operation = new BranchOperation(dialog.getSelectedRepository(), dialog.getBranch());								
 				operation.execute(null);
+				
 			} catch (CoreException e) {
+				e.printStackTrace();
+			} catch (IOException e) {
 				e.printStackTrace();
 			}
 		}
@@ -50,7 +68,7 @@ public class TaskActivationListener implements ITaskActivationListener {
 		// if we get a conflict... this may be a bit more complicated... but how common would this be?
 		Repository repository = Activator.getDefault().getRepositoryCache().getAllRepositories()[0];
 		try {
-			BranchOperation operation = new BranchOperation(repository, Constants.MASTER);
+			BranchOperation operation = new BranchOperation(repository, Constants.R_HEADS + Constants.MASTER);
 			operation.execute(null);
 		} catch (CoreException e) {
 			e.printStackTrace();
