@@ -1,4 +1,4 @@
-package org.eclipse.mylyn.commit;
+package org.eclipse.mylyn.internal.team.git.commit;
 
 import org.eclipse.egit.ui.extensions.ICommitDialogExtender;
 import org.eclipse.mylyn.internal.team.ui.FocusedTeamUiPlugin;

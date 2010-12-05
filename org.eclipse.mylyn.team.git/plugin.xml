@@ -10,7 +10,7 @@
    <extension
          point="org.eclipse.egit.ui.commitDialog">
       <dialog
-            commitDialog="org.eclipse.mylyn.commit.CommitDialogExtender">
+            commitDialog="org.eclipse.mylyn.internal.team.git.commit.CommitDialogExtender">
       </dialog>
    </extension>
 
