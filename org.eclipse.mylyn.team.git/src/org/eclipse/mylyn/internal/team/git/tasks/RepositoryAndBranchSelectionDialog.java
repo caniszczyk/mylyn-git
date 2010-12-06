@@ -10,6 +10,11 @@
 package org.eclipse.mylyn.internal.team.git.tasks;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 
 import org.eclipse.egit.core.RepositoryUtil;
@@ -30,10 +35,6 @@ import org.eclipse.jgit.lib.Repository;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.FocusEvent;
 import org.eclipse.swt.events.FocusListener;
-import org.eclipse.swt.events.ModifyEvent;
-import org.eclipse.swt.events.ModifyListener;
-import org.eclipse.swt.events.SelectionAdapter;
-import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
@@ -48,7 +49,8 @@ public class RepositoryAndBranchSelectionDialog extends TitleAreaDialog {
 	private RepositoryUtil util = Activator.getDefault().getRepositoryUtil();
 	private String initialBranch;
 	private String branch;
-	private Repository repo;
+	private List<Repository> repos = new LinkedList<Repository>();
+	private Map<String, String> branchesForCombo = new HashMap<String, String>();
 
 	public RepositoryAndBranchSelectionDialog(Shell parentShell, String initialBranch) {
 		super(parentShell);
@@ -65,8 +67,8 @@ public class RepositoryAndBranchSelectionDialog extends TitleAreaDialog {
 		GridDataFactory.fillDefaults().span(3, 1).grab(true, false).applyTo(
 				repositoryLabel);
 
-		repositoryTableViewer = new TableViewer(composite, SWT.SINGLE | SWT.H_SCROLL | SWT.V_SCROLL
-				| SWT.BORDER);
+		repositoryTableViewer = new TableViewer(composite, SWT.H_SCROLL | SWT.V_SCROLL
+				| SWT.BORDER | SWT.MULTI);
 		repositoryTableViewer.setContentProvider(new RepositoriesViewContentProvider());
 		GridDataFactory.fillDefaults().span(3, 1).grab(true, true).applyTo(repositoryTableViewer.getTable());
 		repositoryTableViewer.setLabelProvider(new RepositoriesViewLabelProvider());
@@ -84,14 +86,22 @@ public class RepositoryAndBranchSelectionDialog extends TitleAreaDialog {
 					branchCombo.setEnabled(true);
 					branchCombo.removeAll();
 					branchCombo.setText(initialBranch);
-					repo = getRepository();
-					if (repo != null) {
-						for (Entry<String, Ref> refEntry : repo.getRefDatabase()
-								.getRefs(Constants.R_HEADS).entrySet()) {
-							if (!refEntry.getValue().isSymbolic())
-								branchCombo.add(refEntry.getValue().getName());
-
+					repos = getRepositories();
+					
+					for (Repository repository : repos) {
+						if (repository != null) {
+							for (Entry<String, Ref> refEntry : repository.getRefDatabase()
+									.getRefs(Constants.R_HEADS).entrySet()) {
+								if (!refEntry.getValue().isSymbolic())
+																		
+									branchesForCombo.put(refEntry.getValue().getName(), refEntry.getValue().getName());	
+	
+							}
 						}
+					}
+					
+					for (String b : branchesForCombo.keySet()) {
+						branchCombo.add(b);
 					}
 				} catch (IOException e) {
 					// do nothing atm
@@ -126,22 +136,22 @@ public class RepositoryAndBranchSelectionDialog extends TitleAreaDialog {
 	public String getBranch() {
 		return branch;
 	}
-
-	/**
-	 * @return the repository
-	 */
-	private Repository getRepository() {
-		Object obj = ((IStructuredSelection) repositoryTableViewer.getSelection())
-		.getFirstElement();
-		if (obj == null)
-			return null;
-		return ((RepositoryTreeNode) obj).getRepository();
-	}
 	
-	public Repository getSelectedRepository() {
-		if (repo == null)
-			return null;
-		return repo;
+	private List<Repository> getRepositories() {
+		List<Repository> reposList = new LinkedList<Repository>();
+		Iterator<RepositoryTreeNode> it = ((IStructuredSelection) repositoryTableViewer.getSelection()).iterator();
+		
+		while (it.hasNext()) {
+			reposList.add(it.next().getRepository());
+		}
+		
+		return reposList;
 	}
 
+	public List<Repository> getSelectedRepositories() {
+		if (repos.isEmpty()) {
+			return null;
+		}
+		return repos;
+	}
 }
