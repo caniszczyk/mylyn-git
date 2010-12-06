@@ -10,17 +10,19 @@
 package org.eclipse.mylyn.internal.team.git.tasks;
 
 import java.io.IOException;
+import java.util.List;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.egit.core.Activator;
 import org.eclipse.egit.core.op.BranchOperation;
 import org.eclipse.egit.core.op.CreateLocalBranchOperation;
-import org.eclipse.egit.core.op.IEGitOperation;
 import org.eclipse.jface.window.Window;
 import org.eclipse.jgit.lib.Constants;
 import org.eclipse.jgit.lib.Repository;
+import org.eclipse.mylyn.internal.context.core.ContextCorePlugin;
 import org.eclipse.mylyn.tasks.core.ITask;
 import org.eclipse.mylyn.tasks.core.ITaskActivationListener;
+import org.eclipse.mylyn.tasks.ui.TasksUi;
 import org.eclipse.ui.PlatformUI;
 
 public class TaskActivationListener implements ITaskActivationListener {
@@ -34,17 +36,18 @@ public class TaskActivationListener implements ITaskActivationListener {
 		RepositoryAndBranchSelectionDialog dialog = new RepositoryAndBranchSelectionDialog(PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell(), branchFullName);
 		if (dialog.open() == Window.OK) {
 			try {
-				Repository repo = dialog.getSelectedRepository();
+				List<Repository> repos = dialog.getSelectedRepositories();
 								
-				// Create new branch, if branch with proposed name doesn't exist, otherwise checkout
-				if (repo.getRefDatabase().getRef(branch) == null) {		
-					CreateLocalBranchOperation createOperation = new CreateLocalBranchOperation(repo, branch, repo.getRef(Constants.R_HEADS + Constants.MASTER));
-					createOperation.execute(null);
+				for (Repository repo : repos) {
+					// Create new branch, if branch with proposed name doesn't exist, otherwise checkout
+					if (repo.getRefDatabase().getRef(branch) == null) {		
+						CreateLocalBranchOperation createOperation = new CreateLocalBranchOperation(repo, branch, repo.getRef(Constants.R_HEADS + Constants.MASTER));
+						createOperation.execute(null);
+					}
+					
+					BranchOperation operation = new BranchOperation(repo, dialog.getBranch());								
+					operation.execute(null);
 				}
-				
-				BranchOperation operation = new BranchOperation(dialog.getSelectedRepository(), dialog.getBranch());								
-				operation.execute(null);
-				
 			} catch (CoreException e) {
 				e.printStackTrace();
 			} catch (IOException e) {
@@ -66,6 +69,8 @@ public class TaskActivationListener implements ITaskActivationListener {
 		// FIXME hack, we should detect which repository to switch to master
 		// we should base this off the task context imho... we should be able to guess based on the projects in the context
 		// if we get a conflict... this may be a bit more complicated... but how common would this be?
+		ContextCorePlugin.getContextManager();
+		
 		Repository repository = Activator.getDefault().getRepositoryCache().getAllRepositories()[0];
 		try {
 			BranchOperation operation = new BranchOperation(repository, Constants.R_HEADS + Constants.MASTER);
