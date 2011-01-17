@@ -1,1 +1,37 @@
-TODO
+            == Eclipse Mylyn Integration ==
+
+This package is licensed under the EPL.  Please refer to the 
+and LICENSE files for the complete licenses within each package.
+
+This package is actually composed of three major components:
+
+  org.eclipse.egit.mylyn.ui/
+
+    An Eclipse plugin providing the user interface on top of
+    org.eclipse.egit.core.
+
+  org.eclipse.egit.mylyn-feature/
+
+    This project is for building an Eclipse "feature"
+    out of the plugins above.
+
+  org.eclipse.egit.mylyn-updatesite/
+
+    This package is for producing and update site, i.e. a web site
+    you can point your eclipse at and just upgrade.
+
+- Eclipse 3.5.2 is the minimum Eclipse version for egit 0.11 and later.
+
+- Newer versions may implement new functionality, remove
+  existing functions and change others without other notice than what
+  is written in the commit log and source files themselves.
+
+            == Support                         ==
+
+  Post question, comments or patches to the egit-dev@eclipse.org mailing list.
+
+
+            == Contributing                    ==
+
+  See SUBMITTING_PATCHES in this directory. However, feedback and bug reports
+  are also contributions.
