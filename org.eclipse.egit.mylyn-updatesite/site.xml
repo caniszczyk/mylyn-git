@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<site>
+   <description url="EGit Mylyn Integration">
+	EGit Mylyn Integration
+   </description>
+   <feature url="features/org.eclipse.egit.mylyn_0.0.0.qualifier.jar" id="org.eclipse.egit.mylyn" version="0.0.0" patch="false">
+      <category name="EGit Mylyn (Incubation)"/>
+   </feature>
+   <category-def name="EGit Mylyn (Incubation)" label="EGit Mylyn (Incubation)">
+      <description>
+         Integration of EGit and Mylyn .
+      </description>
+   </category-def>
+</site>
